@@ -1,5 +1,7 @@
 package com.qiuzhitech.mymybatis.binding;
 
+import com.qiuzhitech.mymybatis.session.SqlSession;
+
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -9,10 +11,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
 
     private static final long serialVersionUID = -6424540398559729838L;
 
-    private Map<String, String> sqlSession;
+    private SqlSession sqlSession;
     private final Class<T> mapperInterface;
 
-    public MapperProxy(Map<String, String> sqlSession, Class<T> mapperInterface) {
+    public MapperProxy(SqlSession sqlSession, Class<T> mapperInterface) {
         this.mapperInterface = mapperInterface;
         this.sqlSession = sqlSession;
     }
@@ -20,8 +22,10 @@ public class MapperProxy<T> implements InvocationHandler, Serializable {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         if (Object.class.equals(method.getDeclaringClass())) {
+            // 调用 toString、equals、hashCode 等父类方法
             return method.invoke(this, args);
+        } else {
+            return sqlSession.selectOne(method.getName(), args);
         }
-        return "This is proxy" + sqlSession.get(mapperInterface.getName() + "." + method.getName());
     }
 }

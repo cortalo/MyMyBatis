@@ -2,7 +2,11 @@ package com.qiuzhitech.mymybatis;
 
 import com.alibaba.fastjson2.JSON;
 import com.qiuzhitech.mymybatis.binding.MapperProxyFactory;
+import com.qiuzhitech.mymybatis.binding.MapperRegistry;
 import com.qiuzhitech.mymybatis.dao.IUserDao;
+import com.qiuzhitech.mymybatis.session.SqlSession;
+import com.qiuzhitech.mymybatis.session.SqlSessionFactory;
+import com.qiuzhitech.mymybatis.session.defaults.DefaultSqlSessionFactory;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,26 +22,20 @@ public class ApiTest {
 
     @Test
     public void test_MapperProxyFactory() {
-        MapperProxyFactory<IUserDao> factory = new MapperProxyFactory<>(IUserDao.class);
+        // 1. 注册 Mapper
+        MapperRegistry registry = new MapperRegistry();
+        registry.addMappers("com.qiuzhitech.mymybatis.dao");
 
-        Map<String, String> sqlSession = new HashMap<>();
-        sqlSession.put("com.qiuzhitech.mymybatis.dao.IUserDao.queryUserName", "SQL for query userName");
+        // 2. 从 SqlSession 工厂获取 Session
+        SqlSessionFactory sqlSessionFactory = new DefaultSqlSessionFactory(registry);
+        SqlSession sqlSession = sqlSessionFactory.openSession();
 
-        IUserDao userDao = factory.newInstance(sqlSession);
-        String result = userDao.queryUserName("1");
-        logger.info("test result: {}", JSON.toJSONString(result));
+        // 3. 获取映射器对象
+        IUserDao userDao = sqlSession.getMapper(IUserDao.class);
 
-    }
-
-    @Test
-    public void test_proxy_class() {
-        IUserDao userDao = (IUserDao) Proxy.newProxyInstance(
-                Thread.currentThread().getContextClassLoader(),
-                new Class[]{IUserDao.class},
-                ((proxy, method, args) -> "This is proxy")
-        );
-        String result = userDao.queryUserName("1");
-        logger.info("Test result: {}", result);
+        // 4. 测试验证
+        String res = userDao.queryUserName("10001");
+        logger.info("测试结果：{}", res);
     }
 
 
